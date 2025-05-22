@@ -7,7 +7,7 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - docker build -t myapp-backend .
+      - docker build -t myapp-backend ./backend
       - docker tag myapp-backend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp-backend:latest
   post_build:
     commands:
