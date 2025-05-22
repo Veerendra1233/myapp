@@ -1,5 +1,9 @@
 version: 0.2
+
 phases:
+  install:
+    runtime-versions:
+      nodejs: 18
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -7,9 +11,9 @@ phases:
   build:
     commands:
       - echo Building the Docker image...
-      - docker build -t myapp-frontend .
+      - docker build -t myapp-frontend ./frontend
       - docker tag myapp-frontend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp-frontend:latest
   post_build:
     commands:
       - echo Pushing the Docker image...
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp-frontend:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/myapp-fro_
