@@ -4,9 +4,10 @@ function App() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    fetch('/api/hello')
+    fetch('http://13.58.228.176:3001/api/hello')  // <--- Updated to full IP path
       .then(res => res.json())
-      .then(data => setMsg(data.message));
+      .then(data => setMsg(data.message))
+      .catch(err => setMsg('Failed to fetch'));
   }, []);
 
   return <h1>{msg || 'Loading...'}</h1>;
