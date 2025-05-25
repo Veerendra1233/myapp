@@ -4,7 +4,8 @@ function App() {
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    fetch('http://13.58.228.176:3001/api/hello')  // <--- Updated to full IP path
+   fetch('http://myapp-alb-84648660.us-east-2.elb.amazonaws.com/api/hello')
+ // <--- Updated to full IP path
       .then(res => res.json())
       .then(data => setMsg(data.message))
       .catch(err => setMsg('Failed to fetch'));
