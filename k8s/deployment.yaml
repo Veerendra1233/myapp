@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: my-app
-        image: ghcr.io/placeholder/my-app:latest # CI will update this
+        image: ghcr.io/veerendra1233/my-app:dadb2ee571375d75cda04b05c7158f3ca38278f1
         ports:
         - containerPort: 80
