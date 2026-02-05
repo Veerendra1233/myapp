@@ -3,7 +3,7 @@ name: CI-CD-Pipeline
 on:
   push:
     branches: [ main ]
-    paths: [ 'app/**' ]
+    paths: [ 'app/**' ] # Only trigger when code changes
 
 jobs:
   build-and-push:
@@ -12,8 +12,16 @@ jobs:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
+      # Fix for lowercase repository names
+      - name: Lowercase Repo Owner
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+        env:
+          OWNER: ${{ github.repository_owner }}
+
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -21,25 +29,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: ./app
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/my-app:${{ github.sha }}
+          # Use the lowercase owner variable
+          tags: ghcr.io/${{ env.OWNER_LC }}/my-app:${{ github.sha }}
 
   promote-to-production:
     needs: build-and-push
     runs-on: ubuntu-latest
-    environment: production  # This triggers the manual approval gate
+    # This matches the Environment you create in GitHub Settings
+    environment: production  
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
-      - name: Update Manifest
+      - name: Lowercase Repo Owner (Repeat for this job)
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Update Kubernetes Manifest
         run: |
           git config --global user.email "ci-bot@example.com"
           git config --global user.name "CI Bot"
-          sed -i "s|image: .*|image: ghcr.io/${{ github.repository_owner }}/my-app:${{ github.sha }}|g" k8s/deployment.yaml
+          
+          # Updates the image tag to the new GHCR image
+          sed -i "s|image: .*|image: ghcr.io/${{ env.OWNER_LC }}/my-app:${{ github.sha }}|g" k8s/deployment.yaml
+          
           git add k8s/deployment.yaml
-          git commit -m "prod: deploy image ${{ github.sha }}"
+          git commit -m "chore: update prod image to ${{ github.sha }} [skip ci]"
           git push
