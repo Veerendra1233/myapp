@@ -1,0 +1,45 @@
+name: CI-CD-Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'app/**' ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/my-app:${{ github.sha }}
+
+  promote-to-production:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production  # This triggers the manual approval gate
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Update Manifest
+        run: |
+          git config --global user.email "ci-bot@example.com"
+          git config --global user.name "CI Bot"
+          sed -i "s|image: .*|image: ghcr.io/${{ github.repository_owner }}/my-app:${{ github.sha }}|g" k8s/deployment.yaml
+          git add k8s/deployment.yaml
+          git commit -m "prod: deploy image ${{ github.sha }}"
+          git push
