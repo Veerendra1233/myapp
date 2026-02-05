@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: go-service
-        image: ghcr.io/placeholder/go-service:latest
+        image: ghcr.io/veerendra1233/go-service:eaccd4018debd4eba2ada0646b53e6cf7e633a9d
         ports:
         - containerPort: 8080
