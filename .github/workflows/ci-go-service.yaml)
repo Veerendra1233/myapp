@@ -1,0 +1,58 @@
+name: CI-Go-Service
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'go-service/**' ] # Specific trigger for Go code
+
+jobs:
+  build-push-go:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Lowercase Repo Owner
+        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Go Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./go-service
+          push: true
+          tags: ghcr.io/${{ env.OWNER_LC }}/go-service:${{ github.sha }}
+
+  promote-go-to-prod:
+    needs: build-push-go
+    runs-on: ubuntu-latest
+    environment: production # Requires your manual approval
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Lowercase Repo Owner
+        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Update Go Manifest
+        run: |
+          git config --global user.email "ci-bot@example.com"
+          git config --global user.name "CI Bot"
+          # Update the SPECIFIC go-deployment file
+          sed -i "s|image: .*|image: ghcr.io/${{ env.OWNER_LC }}/go-service:${{ github.sha }}|g" k8s/go-deployment.yaml
+          git add k8s/go-deployment.yaml
+          git commit -m "prod: update go-service to ${{ github.sha }} [skip ci]"
+          git push
